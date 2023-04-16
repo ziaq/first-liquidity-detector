@@ -1,26 +1,20 @@
-require('dotenv').config();
+const { Telegraf } = require('telegraf');
 
-const axios = require('axios');
-const logger = require('./utils/logger');
-
-const botToken = process.env.TELEGRAM_BOT_TOKEN;
-const chatId = process.env.TELEGRAM_CHAT_ID;
+const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
 const sendTelegramNotification = async (message) => {
-  const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-  const payload = {
-    chat_id: chatId,
-    text: message,
-  };
-
   try {
-    await axios.post(url, payload);
-    logger.info(`Telegram notification sent: ${message}`);
+    await bot.telegram.sendMessage(TELEGRAM_CHAT_ID, message, { parse_mode: 'HTML' });
   } catch (error) {
-    logger.error(`Failed to send Telegram notification: ${error.message}`);
+    console.error(`Failed to send Telegram notification: ${error.message}`);
   }
 };
 
-module.exports = {
-  sendTelegramNotification,
-};
+bot.launch();
+
+// Enable graceful stop
+process.once('SIGINT', () => bot.stop('SIGINT'));
+process.once('SIGTERM', () => bot.stop('SIGTERM'));
+
+module.exports = { sendTelegramNotification };

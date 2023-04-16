@@ -1,17 +1,34 @@
 const winston = require('winston');
+const { combine, timestamp, printf, label } = winston.format;
+
+const commonFormat = printf(({ timestamp, level, message, label }) => {
+  return `${timestamp} ${level} [${label}]: ${message}`;
+});
 
 const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.printf(({ timestamp, level, message }) => {
-      return `[${timestamp}] ${level}: ${message}`;
-    })
+  format: combine(
+    timestamp(),
+    commonFormat
   ),
   transports: [
-    new winston.transports.Console(),
-    new winston.transports.File({ filename: 'logs/app.log' }),
+    new winston.transports.File({
+      filename: './logs/app.log',
+      level: 'info',
+    }),
+    new winston.transports.Console({
+      format: combine(
+        timestamp(),
+        commonFormat
+      ),
+      level: 'info',
+    }),
   ],
 });
 
-module.exports = logger;
+const mainInfoLogger = logger.child({ label: 'info' });
+const checkedBlocksLogger = logger.child({ label: 'block' });
+
+module.exports = {
+  mainInfoLogger,
+  checkedBlocksLogger,
+};
