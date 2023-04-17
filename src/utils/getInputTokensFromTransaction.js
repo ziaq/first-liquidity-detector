@@ -1,9 +1,9 @@
 const ethers = require('ethers');
-const ADD_LIQUIDITY_ABI = require('../abi/uniswapV2Router02.json');
-const { mainInfoLogger } = require('./logger');
+const uniswapV2RouterAbi = require('../../abi/uniswapV2Router.json');
+const logger = require('./logger');
 
 async function getInputTokensFromTransaction(transaction) {
-  const tokenContractInterface = new ethers.utils.Interface(ADD_LIQUIDITY_ABI);
+  const tokenContractInterface = new ethers.utils.Interface(uniswapV2RouterAbi);
 
   try {
     const decoded = tokenContractInterface.parseTransaction(transaction);
@@ -21,7 +21,7 @@ async function getInputTokensFromTransaction(transaction) {
         tokenB = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'; // WETH address
         break;
       default:
-        throw new Error('Unsupported method signature');
+        logger.error('Unsupported method signature');
     }
 
     return {
@@ -29,7 +29,7 @@ async function getInputTokensFromTransaction(transaction) {
       tokenB: tokenB,
     };
   } catch (error) {
-    mainInfoLogger.error(`Error decoding transaction ${transaction.hash}: ${error.message}`);
+    logger.error(`Error decoding transaction ${transaction.hash}: ${error.message}`);
   }
 
   return null;
