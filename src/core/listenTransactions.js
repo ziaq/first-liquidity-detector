@@ -2,6 +2,8 @@ const logger = require('../utils/logger');
 const isAddLiquidityTransaction = require('../utils/checkIsTransactionLiquidAdd');
 const getInputTokensFromTransaction = require('../utils/getInputTokensFromTransaction');
 const sendTelegramNotification = require('../services/sendTelegramNotification');
+const checkAnyPoolNotExists = require('../utils/checkAnyPoolNotExists');
+const getLiquidityValueInUSD = require('../utils/getLiquidityValueInUSD');
 
 async function processBlock(provider, currentBlockNumber) {
   try {
@@ -20,19 +22,33 @@ async function processBlock(provider, currentBlockNumber) {
         continue;
       }
 
-      const inputTokens = await getInputTokensFromTransaction(transaction);
-      const message = `Liquidity addition detected in block ${currentBlockNumber}:\n` +
+      const inputTokens = await getInputTokensFromTransaction(provider, transaction);
+      const poolNotExists = await checkAnyPoolNotExists(provider, inputTokens.tokenA, inputTokens.tokenB, currentBlockNumber);
+
+      const message = `liquidity addition detected in block ${currentBlockNumber}:\n` +
                       `TokenA: ${inputTokens.tokenA}\n` +
                       `TokenB: ${inputTokens.tokenB}\n` +
                       `Transaction Hash: ${transaction.hash}`;
 
-      logger.catched(message);
-      await sendTelegramNotification(message);
+      if (poolNotExists) {
+        console.log(inputTokens.amountA + '  ' + inputTokens.amountB)
+        const liquidityValueInUsd = getLiquidityValueInUSD(
+          inputTokens.tokenA, 
+          inputTokens.amountA, 
+          inputTokens.tokenB, 
+          inputTokens.amountB
+          );
+        logger.catched('First ' + message + `\nLiquidity value in USD: ${liquidityValueInUsd}`);
+        sendTelegramNotification('First ' + message + `\nLiquidity value in USD: ${liquidityValueInUsd}`);
+      } else {
+        logger.info('Not the first ' + message);
+      }
     }
 
     processBlock(provider, currentBlockNumber + 1);
   } catch (error) {
     logger.error(`Error processing block ${currentBlockNumber}: ${error.message}`);
+    sendTelegramNotification(`Error processing block ${currentBlockNumber}: ${error.message}`);
   }
 }
 

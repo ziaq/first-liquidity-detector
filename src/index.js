@@ -5,9 +5,7 @@ const logger = require('./utils/logger');
 const getStartSettingsFromAdmin = require('./core/getStartSettingsFromAdmin');
 const listenTransactions = require('./core/listenTransactions');
 
-const provider = new ethers.providers.JsonRpcProvider(config.rpcUrl, {
-  chainId: 1,
-});
+const provider = new ethers.providers.JsonRpcProvider(config.rpcUrl);
 
 const redisClient = redis.createClient(config.redisUrl);
 redisClient.connect().then(() => {
