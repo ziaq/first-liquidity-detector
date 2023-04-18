@@ -8,17 +8,24 @@ function getLiquidityValueInUSD(tokenA, amountA, tokenB, amountB) {
   };
 
   let liquidityValueInUsd = 0;
+  let nonValuableToken = null;
 
   if (tokenA === VALUABLE_TOKENS.WETH || tokenB === VALUABLE_TOKENS.WETH) {
     const wethAmount = tokenA === VALUABLE_TOKENS.WETH ? amountA : amountB;
     liquidityValueInUsd = wethAmount * wethPriceInUsd;
+    nonValuableToken = tokenA === VALUABLE_TOKENS.WETH ? tokenB : tokenA;
   } else if (tokenA === VALUABLE_TOKENS.USDT || tokenA === VALUABLE_TOKENS.USDC) {
     liquidityValueInUsd = amountA;
+    nonValuableToken = tokenB;
   } else if (tokenB === VALUABLE_TOKENS.USDT || tokenB === VALUABLE_TOKENS.USDC) {
     liquidityValueInUsd = amountB;
+    nonValuableToken = tokenA;
   }
 
-  return liquidityValueInUsd;
+  return {
+    valueInUsd: liquidityValueInUsd,
+    nonValuableToken: nonValuableToken,
+  };
 }
 
 module.exports = getLiquidityValueInUSD;

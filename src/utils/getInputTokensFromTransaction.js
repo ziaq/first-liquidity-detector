@@ -3,7 +3,7 @@ const uniswapV2RouterAbi = require('../../abi/uniswapV2Router.json');
 const erc20Abi = require('../../abi/erc20.json');
 const logger = require('./logger');
 
-async function getInputTokensFromTransaction(provider, transaction) {
+async function getLiquidityInUsdAndShitcoinAddress(provider, transaction) {
   const tokenContractInterface = new ethers.utils.Interface(uniswapV2RouterAbi);
   try {
     const decoded = tokenContractInterface.parseTransaction(transaction);
@@ -51,4 +51,4 @@ async function getInputTokensFromTransaction(provider, transaction) {
   return null;
 }
 
-module.exports = getInputTokensFromTransaction;
+module.exports = getLiquidityInUsdAndShitcoinAddress;

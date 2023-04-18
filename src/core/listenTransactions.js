@@ -1,11 +1,13 @@
 const logger = require('../utils/logger');
+const config = require('../../config/config');
 const isAddLiquidityTransaction = require('../utils/checkIsTransactionLiquidAdd');
 const getInputTokensFromTransaction = require('../utils/getInputTokensFromTransaction');
 const sendTelegramNotification = require('../services/sendTelegramNotification');
 const checkAnyPoolNotExists = require('../utils/checkAnyPoolNotExists');
-const getLiquidityValueInUSD = require('../utils/getLiquidityValueInUSD');
+const getLiquidityInUsdAndShitcoinAddress = require('../utils/getLiquidityInUsdAndShitcoinAddress');
+const redis = require('redis');
 
-async function processBlock(provider, currentBlockNumber) {
+async function processBlock(provider, currentBlockNumber, redisClient) {
   try {
     logger.checkBlock(`Checking block ${currentBlockNumber}`);
     const block = await provider.getBlockWithTransactions(currentBlockNumber);
@@ -31,21 +33,23 @@ async function processBlock(provider, currentBlockNumber) {
                       `Transaction Hash: ${transaction.hash}`;
 
       if (poolNotExists) {
-        console.log(inputTokens.amountA + '  ' + inputTokens.amountB)
-        const liquidityValueInUsd = getLiquidityValueInUSD(
+        const { valueInUsd, nonValuableToken } = getLiquidityInUsdAndShitcoinAddress(
           inputTokens.tokenA, 
           inputTokens.amountA, 
           inputTokens.tokenB, 
           inputTokens.amountB
-          );
-        logger.catched('First ' + message + `\nLiquidity value in USD: ${liquidityValueInUsd}`);
-        sendTelegramNotification('First ' + message + `\nLiquidity value in USD: ${liquidityValueInUsd}`);
+        );
+        
+        redisClient.set(nonValuableToken, JSON.stringify({ valueInUsd, transactionHash: transaction.hash }));
+
+        logger.catched('First ' + message + `\nLiquidity value in USD: ${valueInUsd}`);
+        sendTelegramNotification('First ' + message + `\nLiquidity value in USD: ${valueInUsd}`);
       } else {
         logger.info('Not the first ' + message);
       }
     }
 
-    processBlock(provider, currentBlockNumber + 1);
+    processBlock(provider, currentBlockNumber + 1, redisClient);
   } catch (error) {
     logger.error(`Error processing block ${currentBlockNumber}: ${error.message}`);
     sendTelegramNotification(`Error processing block ${currentBlockNumber}: ${error.message}`);
@@ -53,10 +57,16 @@ async function processBlock(provider, currentBlockNumber) {
 }
 
 async function listenTransactions(provider, startBlockNumber) {
+  const redisClient = redis.createClient(config.redisUrl);
+  redisClient.connect().then(() => {
+    logger.info('Connected to Redis');
+  });
+
   if (!startBlockNumber) {
     startBlockNumber = await provider.getBlockNumber();
   }
-  processBlock(provider, startBlockNumber);
+  
+  processBlock(provider, startBlockNumber, redisClient);
 }
 
 module.exports = listenTransactions;
