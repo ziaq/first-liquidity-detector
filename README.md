@@ -43,16 +43,16 @@ The project processes blocks in the etherium network and catches transactions ad
 ## Usage
 
 1. Run in the terminal while in the project directory 
-```sh
+   ```sh
    node src/index.js
-```
+   ```
 2. Select the starting block by selecting the number 1 or 2
-```sh
+   ```sh
    Start listening from (1) current block or (2) specific block? (Enter 1 or 2): 1
-``` 
+   ``` 
 
 ## Contact
 
-- Twitter - https://twitter.com/Roma_Ziaq
-- Telegram - @roma_ziaq
+- Twitter https://twitter.com/Roma_Ziaq
+- Telegram @roma_ziaq
 - Project Link: https://github.com/ziaq/first-liquidity-detector
