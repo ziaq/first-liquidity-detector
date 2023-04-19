@@ -40,7 +40,7 @@ async function processBlock(provider, currentBlockNumber, redisClient) {
           inputTokens.amountB
         );
         
-        redisClient.set(nonValuableToken, JSON.stringify({ valueInUsd, transactionHash: transaction.hash }));
+        redisClient.set(nonValuableToken, block.timestamp);
 
         logger.catched('First ' + message + `\nLiquidity value in USD: ${valueInUsd}`);
         sendTelegramNotification('First ' + message + `\nLiquidity value in USD: ${valueInUsd}`);
@@ -51,8 +51,9 @@ async function processBlock(provider, currentBlockNumber, redisClient) {
 
     processBlock(provider, currentBlockNumber + 1, redisClient);
   } catch (error) {
-    logger.error(`Error processing block ${currentBlockNumber}: ${error.message}`);
-    sendTelegramNotification(`Error processing block ${currentBlockNumber}: ${error.message}`);
+    logger.error(`Error processing block ${currentBlockNumber}: ${error.message}\nStart process the block again`);
+    sendTelegramNotification(`Error processing block ${currentBlockNumber}: ${error.message}\nStart process the block again`);
+    processBlock(provider, currentBlockNumber, redisClient);
   }
 }
 
