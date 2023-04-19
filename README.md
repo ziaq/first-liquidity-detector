@@ -53,6 +53,6 @@ The project processes blocks in the etherium network and catches transactions ad
 
 ## Contact
 
-- Twitter https://twitter.com/Roma_Ziaq
+- Twitter https://twitter.com/RomaZiaq
 - Telegram @roma_ziaq
 - Project Link: https://github.com/ziaq/first-liquidity-detector
