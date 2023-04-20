@@ -2,7 +2,7 @@ const ethers = require('ethers');
 const uniswapFactoryAbi = require('../../abi/uniswapV2Factory.json');
 const uniswapPairAbi = require('../../abi/uniswapV2Pair.json');
 const sendTelegramNotification = require('../services/sendTelegramNotification');
-const logger = require('../utils/logger');
+const logger = require('./logger');
 
 const FACTORY_CONTRACT_ADDRESS = '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f';
 
@@ -32,19 +32,8 @@ function getExtraPairsToCheck(tokenAAddress, tokenBAddress) {
   return extraPairs;
 }
 
-async function checkReservesForWethPair(provider, tokenA, tokenB, pairAddress, previousBlockNumber) {
-  if (tokenA === WETH_ADDRESS || tokenB === WETH_ADDRESS) {
-    const pairContract = new ethers.Contract(pairAddress, uniswapPairAbi, provider);
-    const reserves = await pairContract.getReserves({ blockTag: previousBlockNumber });
-    
-    logger.info(`reserves: ${reserves}`);
-    return reserves[0].isZero() && reserves[1].isZero();
-  }
-  return false;
-}
-
-// Check is it the first liquidity addition through cheking any pool existing
-async function checkAnyPoolNotExists(provider, tokenAAddress, tokenBAddress, currentBlockNumber) {
+// Check is it the first liquidity addition through checking any pool existing
+async function checkPoolExists(provider, tokenAAddress, tokenBAddress, currentBlockNumber) {
   const factoryContract = new ethers.Contract(FACTORY_CONTRACT_ADDRESS, uniswapFactoryAbi, provider);
 
   try {
@@ -59,22 +48,17 @@ async function checkAnyPoolNotExists(provider, tokenAAddress, tokenBAddress, cur
     // Iterate through each pair to check if a liquidity pool exists
     for (const [tokenA, tokenB] of pairsToCheck) {
       const pairAddress = await factoryContract.getPair(tokenA, tokenB, { blockTag: previousBlockNumber });
-      
       if (pairAddress !== ethers.constants.AddressZero) {
-        // Check it because pair with WETH creates everytime when creted new token contract
-        if (await checkReservesForWethPair(provider, tokenA, tokenB, pairAddress, previousBlockNumber)) {
-          continue; // Skip this pair, as the reserves are zero
-        }
-        return false; // The liquidity pool exists
+        return true; // Pool exists
       }
     }
 
-    return true; // The liquidity pool does not exist
+    return false; // Pool does not exist
   } catch (error) {
     logger.error(`Error while checking pool existence: ${error.message}`);
     sendTelegramNotification(`Error while checking pool existence: ${error.message}`);
-    return false;
+    return false; // Pool does not exist
   }
 }
 
-module.exports = checkAnyPoolNotExists;
+module.exports = checkPoolExists;

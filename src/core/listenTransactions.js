@@ -1,9 +1,10 @@
 const logger = require('../utils/logger');
 const config = require('../../config/config');
+const ignoreList = require('../../config/ignoreList.json');
 const isAddLiquidityTransaction = require('../utils/checkIsTransactionLiquidAdd');
 const getInputTokensFromTransaction = require('../utils/getInputTokensFromTransaction');
 const sendTelegramNotification = require('../services/sendTelegramNotification');
-const checkAnyPoolNotExists = require('../utils/checkAnyPoolNotExists');
+const checkPoolExists = require('../utils/checkPoolExists');
 const getLiquidityInUsdAndShitcoinAddress = require('../utils/getLiquidityInUsdAndShitcoinAddress');
 const redis = require('redis');
 
@@ -14,8 +15,8 @@ async function processBlock(provider, currentBlockNumber, redisClient) {
 
     if (!block) {
       setTimeout(() => {
-        processBlock(provider, currentBlockNumber);
-      }, 500);
+        processBlock(provider, currentBlockNumber, redisClient);
+      }, 1500);
       return;
     }
 
@@ -25,14 +26,18 @@ async function processBlock(provider, currentBlockNumber, redisClient) {
       }
 
       const inputTokens = await getInputTokensFromTransaction(provider, transaction);
-      const poolNotExists = await checkAnyPoolNotExists(provider, inputTokens.tokenA, inputTokens.tokenB, currentBlockNumber);
+      // Condition for ignoring some tokens that have unusual pools and give wrong result
+      if (ignoreList.tokens.includes(inputTokens.tokenA) || ignoreList.tokens.includes(inputTokens.tokenB)) {
+        continue;
+      }
+
+      const isPoolExits = await checkPoolExists(provider, inputTokens.tokenA, inputTokens.tokenB, currentBlockNumber);
 
       const message = `liquidity addition detected in block ${currentBlockNumber}:\n` +
                       `TokenA: ${inputTokens.tokenA}\n` +
                       `TokenB: ${inputTokens.tokenB}\n` +
                       `Transaction Hash: ${transaction.hash}`;
-
-      if (poolNotExists) {
+      if (!isPoolExits) {
         const { valueInUsd, nonValuableToken } = getLiquidityInUsdAndShitcoinAddress(
           inputTokens.tokenA, 
           inputTokens.amountA, 
@@ -58,10 +63,9 @@ async function processBlock(provider, currentBlockNumber, redisClient) {
 }
 
 async function listenTransactions(provider, startBlockNumber) {
-  const redisClient = redis.createClient(config.redisUrl);
-  redisClient.connect().then(() => {
-    logger.info('Connected to Redis');
-  });
+  const redisClient = redis.createClient({ url: config.redisUrl, db: 0 });
+  await redisClient.connect();
+  logger.info('Connected to Redis');
 
   if (!startBlockNumber) {
     startBlockNumber = await provider.getBlockNumber();
