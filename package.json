@@ -2,6 +2,9 @@
   "name": "first-lequidity-detector",
   "version": "1.0.0",
   "description": "",
+  "scripts": {
+    "start": "node src/index.js"
+  },
   "main": "index.js",
   "keywords": [],
   "author": "",

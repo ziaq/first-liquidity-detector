@@ -22,12 +22,14 @@ const createLoggerWithLabel = (customLabel) => {
 
 const infoLogger = createLoggerWithLabel('info');
 const errorLogger = createLoggerWithLabel('error');
-const checkBlockLogger = createLoggerWithLabel('checkBlock');
-const catchedLogger = createLoggerWithLabel('catched');
+const checkingBlockLogger = createLoggerWithLabel('checkingBlock');
+const checkingTxLogger = createLoggerWithLabel('checkingTx');
+const bingoLogger = createLoggerWithLabel('bingo');
 
 module.exports = {
   info: infoLogger.info.bind(infoLogger),
   error: errorLogger.error.bind(errorLogger),
-  checkBlock: checkBlockLogger.info.bind(checkBlockLogger),
-  catched: catchedLogger.info.bind(catchedLogger),
+  checkingBlock: checkingBlockLogger.info.bind(checkingBlockLogger),
+  checkingTx: checkingTxLogger.info.bind(checkingTxLogger),
+  bingo: bingoLogger.info.bind(bingoLogger),
 };

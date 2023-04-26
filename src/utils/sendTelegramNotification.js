@@ -1,6 +1,6 @@
 const { Telegraf } = require('telegraf');
 const config = require('../../config/config');
-const { mainInfoLogger } = require('../utils/logger');
+const { mainInfoLogger } = require('./logger');
 
 const bot = new Telegraf(config.telegramBotToken);
 const TELEGRAM_CHAT_ID = config.telegramChatId;
