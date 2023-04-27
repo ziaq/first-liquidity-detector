@@ -35,7 +35,8 @@ The project processes blocks in the etherium network and catches transactions ad
       redisUrl: 'redis://localhost:6379', // If you run redis locally
       telegramBotToken: '3199528576:LHHXZCkje0xf9NFEkzFI2wL2yB0lYRXbOy', // It's not my bot token :)
       telegramChatId: '952347451',
-      wethPriceInUsd: 2100, // Сhange to the actual rate
+      wethPriceInUsd: 2000, // Сhange to the actual rate
+      startBlockNumber: 'latest', // pur here 'latest' for starting from latest block
    };
    ```
 
@@ -44,12 +45,8 @@ The project processes blocks in the etherium network and catches transactions ad
 
 1. Run in the terminal while in the project directory 
    ```sh
-   node src/index.js
+   npm start
    ```
-2. Select the starting block by selecting the number 1 or 2
-   ```sh
-   Start listening from (1) current block or (2) specific block? (Enter 1 or 2): 1
-   ``` 
 
 ## Contact
 
