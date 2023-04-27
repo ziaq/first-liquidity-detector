@@ -1,12 +1,13 @@
+const redis = require('redis');
+
 const logger = require('../utils/logger');
 const config = require('../../config/config');
 const ignoreList = require('../../config/ignoreList.json');
 const isAddLiquidityTransaction = require('../utils/checkIsTransactionLiquidAdd');
 const getInputTokensFromTransaction = require('../utils/getInputTokensFromTransaction');
 const sendTelegramNotification = require('../utils/sendTelegramNotification');
-const checkPoolExists = require('./checkPoolExists');
+const isThereLiquidityInPreviousBlock = require('./isThereLiquidityInPreviousBlock');
 const getLiquidityInUsdAndShitcoinAddress = require('../utils/getLiquidityInUsdAndShitcoinAddress');
-const redis = require('redis');
 
 async function processBlock(provider, currentBlockNumber, redisClient) {
   try {
@@ -31,12 +32,8 @@ async function processBlock(provider, currentBlockNumber, redisClient) {
         continue;
       }
 
-      const isPoolExits = await checkPoolExists(provider, inputTokens.tokenA, inputTokens.tokenB, currentBlockNumber);
+      const isPoolExits = await isThereLiquidityInPreviousBlock(provider, inputTokens.tokenA, inputTokens.tokenB, currentBlockNumber);
 
-      const message = `liquidity addition detected in block ${currentBlockNumber}:\n` +
-                      `TokenA: ${inputTokens.tokenA}\n` +
-                      `TokenB: ${inputTokens.tokenB}\n` +
-                      `Transaction Hash: ${transaction.hash}`;
       if (!isPoolExits) {
         const { valueInUsd, nonValuableToken } = getLiquidityInUsdAndShitcoinAddress(
           inputTokens.tokenA, 
@@ -45,11 +42,17 @@ async function processBlock(provider, currentBlockNumber, redisClient) {
           inputTokens.amountB
         );
         
-        redisClient.set(nonValuableToken, block.timestamp);
+        redisClient.set(nonValuableToken, 'readyForNextInspection', 'EX', 1800);
 
-        logger.bingo('First ' + message + `\nLiquidity value in USD: ${valueInUsd}`);
+        logger.bingo(
+          `First liquidity addition detected in block ${currentBlockNumber} ` +
+          `tokenA ${inputTokens.tokenA} tokenB ${inputTokens.tokenB} liquidity ${valueInUsd}`
+        );
       } else {
-        logger.info('Not the first ' + message);
+        logger.info(
+          `Not the first liquidity addition detected in block ${currentBlockNumber} ` +
+          `tokenA ${inputTokens.tokenA} tokenB ${inputTokens.tokenB}`
+        );
       }
     }
 

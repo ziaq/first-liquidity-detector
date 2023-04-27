@@ -2,8 +2,12 @@ const winston = require('winston');
 const { combine, timestamp, printf } = winston.format;
 
 const customFormat = (customLabel) => printf(({ timestamp, level, message }) => {
-  return `${timestamp} ${level} [${customLabel}]: ${message}`;
+  const date = new Date(timestamp);
+  const formattedTimestamp = date.toLocaleString('ru-RU', { hour12: false }) + 
+    ' :' + String(date.getMilliseconds()).padStart(3, '0');
+  return `${formattedTimestamp} ${level} [${customLabel}]: ${message}`;
 });
+
 
 const createLoggerWithLabel = (customLabel) => {
   return winston.createLogger({
@@ -23,13 +27,13 @@ const createLoggerWithLabel = (customLabel) => {
 const infoLogger = createLoggerWithLabel('info');
 const errorLogger = createLoggerWithLabel('error');
 const checkingBlockLogger = createLoggerWithLabel('checkingBlock');
-const checkingTxLogger = createLoggerWithLabel('checkingTx');
+const fetchLogger = createLoggerWithLabel('fetch');
 const bingoLogger = createLoggerWithLabel('bingo');
 
 module.exports = {
   info: infoLogger.info.bind(infoLogger),
   error: errorLogger.error.bind(errorLogger),
   checkingBlock: checkingBlockLogger.info.bind(checkingBlockLogger),
-  checkingTx: checkingTxLogger.info.bind(checkingTxLogger),
+  fetch: fetchLogger.info.bind(fetchLogger),
   bingo: bingoLogger.info.bind(bingoLogger),
 };
