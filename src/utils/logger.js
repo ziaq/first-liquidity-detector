@@ -1,39 +1,44 @@
-const winston = require('winston');
-const { combine, timestamp, printf } = winston.format;
+const { createLogger, format, transports } = require('winston');
+const DailyRotateFile = require('winston-daily-rotate-file');
+const { combine, timestamp, printf } = format;
 
 const customFormat = (customLabel) => printf(({ timestamp, level, message }) => {
   const date = new Date(timestamp);
-  const formattedTimestamp = date.toLocaleString('ru-RU', { hour12: false }) + 
+  const formattedTimestamp = date.toLocaleString('ru-RU', { hour12: false }) +
     ' :' + String(date.getMilliseconds()).padStart(3, '0');
   return `${formattedTimestamp} ${level} [${customLabel}]: ${message}`;
 });
 
+const createTransports = () => ([
+  new DailyRotateFile({
+    filename: `logs/app-%DATE%.log`,
+    datePattern: 'DD-MM-YYYY',
+    maxSize: '10m',
+    maxFiles: '10d',
+    level: 'info',
+  }),
+  new transports.Console({
+    level: 'info',
+  }),
+]);
 
-const createLoggerWithLabel = (customLabel) => {
-  return winston.createLogger({
-    format: combine(timestamp(), customFormat(customLabel)),
-    transports: [
-      new winston.transports.File({
-        filename: './logs/app.log',
-        level: 'info',
-      }),
-      new winston.transports.Console({
-        level: 'info',
-      }),
-    ],
-  });
+const createCustomLabelLogger = (customLabel) => createLogger({
+  format: combine(timestamp(), customFormat(customLabel)),
+  transports: createTransports(),
+});
+
+const loggers = {
+  info: createCustomLabelLogger('info'),
+  error: createCustomLabelLogger('error'),
+  checkingBlock: createCustomLabelLogger('checkingBlock'),
+  fetch: createCustomLabelLogger('fetch'),
+  bingo: createCustomLabelLogger('bingo'),
 };
 
-const infoLogger = createLoggerWithLabel('info');
-const errorLogger = createLoggerWithLabel('error');
-const checkingBlockLogger = createLoggerWithLabel('checkingBlock');
-const fetchLogger = createLoggerWithLabel('fetch');
-const bingoLogger = createLoggerWithLabel('bingo');
-
 module.exports = {
-  info: infoLogger.info.bind(infoLogger),
-  error: errorLogger.error.bind(errorLogger),
-  checkingBlock: checkingBlockLogger.info.bind(checkingBlockLogger),
-  fetch: fetchLogger.info.bind(fetchLogger),
-  bingo: bingoLogger.info.bind(bingoLogger),
+  info: loggers.info.info.bind(loggers.info),
+  error: loggers.error.error.bind(loggers.error),
+  checkingBlock: loggers.checkingBlock.info.bind(loggers.checkingBlock),
+  fetch: loggers.fetch.info.bind(loggers.fetch),
+  bingo: loggers.bingo.info.bind(loggers.bingo),
 };
