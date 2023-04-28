@@ -14,6 +14,7 @@ The project processes blocks in the etherium network and catches transactions ad
 - redis
 - telegraf
 - winston
+- winston-daily-rotate-file
 
 <!-- GETTING STARTED -->
 ## Getting Started
