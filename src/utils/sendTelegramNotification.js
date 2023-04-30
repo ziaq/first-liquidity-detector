@@ -1,6 +1,6 @@
 const { Telegraf } = require('telegraf');
 const config = require('../../config/config');
-const { mainInfoLogger } = require('./logger');
+const logger = require('./logger');
 
 const bot = new Telegraf(config.telegramBotToken);
 const TELEGRAM_CHAT_ID = config.telegramChatId;
@@ -9,7 +9,7 @@ const sendTelegramNotification = async (message) => {
   try {
     await bot.telegram.sendMessage(TELEGRAM_CHAT_ID, message, { parse_mode: 'HTML' });
   } catch (error) {
-    mainInfoLogger.error('Can not send message to telegram');
+    logger.error('Can not send message to telegram');
   }
 };
 
