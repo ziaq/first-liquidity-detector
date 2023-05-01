@@ -1,8 +1,10 @@
 const ethers = require('ethers');
+
 const uniswapFactoryAbi = require('../../abi/uniswapV2Factory.json');
 const uniswapPairAbi = require('../../abi/uniswapV2Pair.json');
 const sendTelegramNotification = require('../utils/sendTelegramNotification');
 const logger = require('../utils/logger');
+const provider = require('../connections/ethersProviderInstance');
 
 const FACTORY_CONTRACT_ADDRESS = '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f';
 
@@ -32,9 +34,10 @@ function getExtraPairsToCheck(tokenAAddress, tokenBAddress) {
   return extraPairs;
 }
 
-async function checkPairExists(provider, factoryContract, tokenA, tokenB, blockNumber) {
+async function checkPairExists(tokenA, tokenB, previousBlockNumber) {
   try {
-    const pairAddress = await factoryContract.getPair(tokenA, tokenB, { blockTag: blockNumber });
+    const factoryContract = new ethers.Contract(FACTORY_CONTRACT_ADDRESS, uniswapFactoryAbi, provider);
+    const pairAddress = await factoryContract.getPair(tokenA, tokenB, { blockTag: previousBlockNumber });
 
     if (pairAddress === ethers.constants.AddressZero) {
       logger.fetch(
@@ -45,7 +48,7 @@ async function checkPairExists(provider, factoryContract, tokenA, tokenB, blockN
 
     if (tokenA === WETH_ADDRESS || tokenB === WETH_ADDRESS) {
       const pairContract = new ethers.Contract(pairAddress, uniswapPairAbi, provider);
-      const reserves = await pairContract.getReserves({ blockTag: blockNumber });
+      const reserves = await pairContract.getReserves({ blockTag: previousBlockNumber });
       const reserveA = reserves._reserve0;
       const reserveB = reserves._reserve1;
 
@@ -71,9 +74,8 @@ async function checkPairExists(provider, factoryContract, tokenA, tokenB, blockN
   }
 }
 
-async function isThereLiquidityInPreviousBlock(provider, tokenAAddress, tokenBAddress, currentBlockNumber) {
+async function isThereLiquidityInPreviousBlock(tokenAAddress, tokenBAddress, currentBlockNumber) {
   try {
-    const factoryContract = new ethers.Contract(FACTORY_CONTRACT_ADDRESS, uniswapFactoryAbi, provider);
     const previousBlockNumber = currentBlockNumber - 1;
     const pairsToCheck = [
       [tokenAAddress, tokenBAddress],
@@ -82,18 +84,18 @@ async function isThereLiquidityInPreviousBlock(provider, tokenAAddress, tokenBAd
 
     logger.fetch(`Checking pairs exist in previous block ${JSON.stringify(pairsToCheck)}`);
     for (const [tokenA, tokenB] of pairsToCheck) {
-      const poolExists = await checkPairExists(provider, factoryContract, tokenA, tokenB, previousBlockNumber);
+      const poolExists = await checkPairExists(tokenA, tokenB, previousBlockNumber);
 
       if (poolExists) {
-        return true;
+        return false;
       }
     }
 
-    return false;
+    return true;
   } catch (error) {
     logger.error(`Error in isThereLiquidityInPreviousBlock: ${error.message}`);
     sendTelegramNotification(`Error in isThereLiquidityInPreviousBlock: ${error.message}`);
-    return true;
+    return false;
   }
 }
 

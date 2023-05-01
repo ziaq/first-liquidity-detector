@@ -30,7 +30,6 @@ const createCustomLabelLogger = (customLabel) => createLogger({
 const loggers = {
   info: createCustomLabelLogger('info'),
   error: createCustomLabelLogger('error'),
-  checkingBlock: createCustomLabelLogger('checkingBlock'),
   fetch: createCustomLabelLogger('fetch'),
   bingo: createCustomLabelLogger('bingo'),
 };
@@ -38,7 +37,6 @@ const loggers = {
 module.exports = {
   info: loggers.info.info.bind(loggers.info),
   error: loggers.error.error.bind(loggers.error),
-  checkingBlock: loggers.checkingBlock.info.bind(loggers.checkingBlock),
   fetch: loggers.fetch.info.bind(loggers.fetch),
   bingo: loggers.bingo.info.bind(loggers.bingo),
 };
