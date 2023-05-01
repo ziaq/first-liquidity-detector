@@ -11,7 +11,7 @@ The project processes blocks in the etherium network and catches transactions ad
 
 - node.js
 - ethers
-- redis
+- ioredis
 - telegraf
 - winston
 - winston-daily-rotate-file
@@ -36,10 +36,10 @@ The project processes blocks in the etherium network and catches transactions ad
       redisUrl: 'redis://localhost:6379', // If you run redis locally
       telegramBotToken: '3199528576:LHHXZCkje0xf9NFEkzFI2wL2yB0lYRXbOy', // It's not my bot token :)
       telegramChatId: '952347451',
-      wethPriceInUsd: 2000, // Сhange to the actual rate
       startBlockNumber: 'latest', // pur here 'latest' for starting from latest block
    };
    ```
+5. Run your Redis (be sure db0 is available)
 
 <!-- USAGE EXAMPLES -->
 ## Usage
