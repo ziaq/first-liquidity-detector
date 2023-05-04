@@ -34,7 +34,7 @@ function getExtraPairsToCheck(tokenAAddress, tokenBAddress) {
   return extraPairs;
 }
 
-async function checkPairExists(tokenA, tokenB, previousBlockNumber) {
+async function checkPairExists(tokenA, tokenB, previousBlockNumber, retries = 1) {
   try {
     const factoryContract = new ethers.Contract(FACTORY_CONTRACT_ADDRESS, uniswapFactoryAbi, provider);
     const pairAddress = await factoryContract.getPair(tokenA, tokenB, { blockTag: previousBlockNumber });
@@ -67,36 +67,38 @@ async function checkPairExists(tokenA, tokenB, previousBlockNumber) {
 
     logger.fetch(`Pair exists in previous block pairAddress ${pairAddress}`);
     return true;
+    
   } catch (error) {
-    logger.error(`Error in checkPairExists: ${error.message}`);
-    sendTelegramNotification(`Error in checkPairExists: ${error.message}`);
-    return true;
+    if (retries > 0) {
+      logger.error(`Error in checkPairExists: ${error.message}. Retrying in 10 seconds`);
+      await new Promise(resolve => setTimeout(resolve, 10000))
+      return await checkPairExists(tokenA, tokenB, previousBlockNumber, retries - 1);
+
+    } else {
+      logger.error(`Skip token. Error in checkPairExists: ${error.message}`);
+      sendTelegramNotification(`Error in checkPairExists: ${error.message}`);
+      return true;
+    }
   }
 }
 
 async function isThereLiquidityInPreviousBlock(tokenAAddress, tokenBAddress, currentBlockNumber) {
-  try {
-    const previousBlockNumber = currentBlockNumber - 1;
-    const pairsToCheck = [
-      [tokenAAddress, tokenBAddress],
-      ...getExtraPairsToCheck(tokenAAddress, tokenBAddress),
-    ];
+  const previousBlockNumber = currentBlockNumber - 1;
+  const pairsToCheck = [
+    [tokenAAddress, tokenBAddress],
+    ...getExtraPairsToCheck(tokenAAddress, tokenBAddress),
+  ];
 
-    logger.fetch(`Checking pairs exist in previous block ${JSON.stringify(pairsToCheck)}`);
-    for (const [tokenA, tokenB] of pairsToCheck) {
-      const poolExists = await checkPairExists(tokenA, tokenB, previousBlockNumber);
+  logger.fetch(`Checking pairs exist in previous block ${JSON.stringify(pairsToCheck)}`);
+  for (const [tokenA, tokenB] of pairsToCheck) {
+    const poolExists = await checkPairExists(tokenA, tokenB, previousBlockNumber);
 
-      if (poolExists) {
-        return false;
-      }
+    if (poolExists) {
+      return false;
     }
-
-    return true;
-  } catch (error) {
-    logger.error(`Error in isThereLiquidityInPreviousBlock: ${error.message}`);
-    sendTelegramNotification(`Error in isThereLiquidityInPreviousBlock: ${error.message}`);
-    return false;
   }
+
+  return true;
 }
 
 module.exports = isThereLiquidityInPreviousBlock;

@@ -14,7 +14,7 @@ const createTransports = () => ([
     filename: `logs/app-%DATE%.log`,
     datePattern: 'DD-MM-YYYY',
     maxSize: '10m',
-    maxFiles: '10d',
+    maxFiles: '3d',
     level: 'info',
   }),
   new transports.Console({

@@ -1,6 +1,5 @@
 const ethers = require('ethers');
 const uniswapV2RouterAbi = require('../../abi/uniswapV2Router.json');
-const openTradingAbi = require('../../abi/openTrading.json');
 const logger = require('./logger');
 
 function getTokensFromTransaction(transaction, addLiquiditySignature) {
