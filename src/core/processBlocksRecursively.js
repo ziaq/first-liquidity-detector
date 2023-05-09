@@ -75,7 +75,7 @@ async function processBlocksRecursively(currentBlockNumber) {
         continue;
       }
 
-      redisClientDb0.set(nonValuableToken, transaction.from.toLowerCase(), 'EX', 129600);
+      redisClientDb0.set(nonValuableToken, transaction.from, 'EX', 129600);
 
       logger.bingo(`First liquidity addition token ${nonValuableToken}`);
     } else {

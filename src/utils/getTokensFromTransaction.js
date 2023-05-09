@@ -7,7 +7,7 @@ function getTokensFromTransaction(transaction, addLiquiditySignature) {
   try {
     if (addLiquiditySignature === '0xc9567bf9') { // openTrading
       tokenA = transaction.to;
-      tokenB = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'; // WETH address
+      tokenB = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'; // WETH address
 
     } else {
       const tokenContractInterface = new ethers.utils.Interface(uniswapV2RouterAbi);
@@ -17,13 +17,13 @@ function getTokensFromTransaction(transaction, addLiquiditySignature) {
       switch (methodName) {
         case 'addLiquidity':
         case 'addLiquiditySupportingFeeOnTransferTokens':
-          tokenA = decodedTx.args.tokenA.toLowerCase();
-          tokenB = decodedTx.args.tokenB.toLowerCase();
+          tokenA = decodedTx.args.tokenA;
+          tokenB = decodedTx.args.tokenB;
           break;
         case 'addLiquidityETH':
         case 'addLiquidityETHSupportingFeeOnTransferTokens':
-          tokenA = decodedTx.args.token.toLowerCase();
-          tokenB = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'; // WETH address
+          tokenA = decodedTx.args.tokenA;
+          tokenB = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'; // WETH address
           break;
         default:
           logger.error(
