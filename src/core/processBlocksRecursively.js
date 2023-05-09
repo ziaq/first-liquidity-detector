@@ -3,7 +3,7 @@ const ignoreList = require('../../config/ignoreList.json');
 const addingLiquiditySignatureList = require('../../config/addingLiquiditySignatureList');
 const getTokensFromTransaction = require('../utils/getTokensFromTransaction');
 const sendTelegramNotification = require('../utils/sendTelegramNotification');
-const isThereLiquidityInPreviousBlock = require('./isThereLiquidityInPreviousBlock');
+const checkIsItFirstAddLiquidity = require('./checkIsItFirstAddLiquidity');
 const identifyShitcoinAddress = require('../utils/identifyShitcoinAddress');
 const redisClientDb0 = require('../connections/redisInstance');
 const provider = require('../connections/ethersProviderInstance');
@@ -52,26 +52,26 @@ async function processBlocksRecursively(currentBlockNumber) {
 
     logger.details(`Сaught liquidity addition tx tokenA ${tokenA} tokenB ${tokenB}`)
 
-    const isItFirstAddLiquidity = await isThereLiquidityInPreviousBlock(
+    const isItFirstAddLiquidity = await checkIsItFirstAddLiquidity(
       tokenA, tokenB, currentBlockNumber);
 
     let nonValuableToken = identifyShitcoinAddress(tokenA, tokenB);
-    nonValuableToken = nonValuableToken.toLowerCase();
-
-    const isSetBefore = await redisClientDb0.exists(nonValuableToken);
-    if (isSetBefore) {
-      logger.info(
-        `nonValuableToken ${nonValuableToken} exists in db0, avoid readdition to db0`
-      );
-      continue;
-    }
 
     if (isItFirstAddLiquidity) {
+      const isSetBefore = await redisClientDb0.exists(nonValuableToken);
+
+      if (isSetBefore) {
+        logger.details(
+          `nonValuableToken ${nonValuableToken} exists in db0, avoid readdition to db0`
+        );
+        continue;
+      }
+
       redisClientDb0.set(nonValuableToken, transaction.from.toLowerCase(), 'EX', 129600);
 
-      logger.bingo(`First liquidity addition in token ${nonValuableToken}`);
+      logger.bingo(`First liquidity addition token ${nonValuableToken}`);
     } else {
-      logger.info(`Not first liquidity addition in token ${nonValuableToken}`);
+      logger.info(`Not first liquidity addition token ${nonValuableToken}`);
     }
   }
 

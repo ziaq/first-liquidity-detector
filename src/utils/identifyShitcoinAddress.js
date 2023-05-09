@@ -1,21 +1,51 @@
-function getLiquidityValueInUSD(tokenA, tokenB) {
+const sendTelegramNotification = require('./sendTelegramNotification');
+const logger = require('./logger');
+
+function identifyShitcoinAddress(tokenA, tokenB) {
   const VALUABLE_TOKENS = {
-    WETH: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
-    USDT: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
-    USDC: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    WETH: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+    USDT: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+    USDC: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+    DAI: '0x6b175474e89094c44da98b954eedeac495271d0f',
   };
 
-  let nonValuableToken = null;
+  let nonValuableToken;
 
-  if (tokenA === VALUABLE_TOKENS.WETH || tokenB === VALUABLE_TOKENS.WETH) {
-    nonValuableToken = tokenA === VALUABLE_TOKENS.WETH ? tokenB : tokenA;
-  } else if (tokenA === VALUABLE_TOKENS.USDT || tokenA === VALUABLE_TOKENS.USDC) {
-    nonValuableToken = tokenB;
-  } else if (tokenB === VALUABLE_TOKENS.USDT || tokenB === VALUABLE_TOKENS.USDC) {
-    nonValuableToken = tokenA;
+  switch (true) {
+    case tokenA === VALUABLE_TOKENS.WETH:
+      nonValuableToken = tokenB;
+      break;
+    case tokenB === VALUABLE_TOKENS.WETH:
+      nonValuableToken = tokenA;
+      break;
+    case tokenA === VALUABLE_TOKENS.USDT:
+      nonValuableToken = tokenB;
+      break;
+    case tokenB === VALUABLE_TOKENS.USDT:
+      nonValuableToken = tokenA;
+      break;
+    case tokenA === VALUABLE_TOKENS.USDC:
+      nonValuableToken = tokenB;
+      break;
+    case tokenB === VALUABLE_TOKENS.USDC:
+      nonValuableToken = tokenA;
+      break;
+    case tokenA === VALUABLE_TOKENS.DAI:
+      nonValuableToken = tokenB;
+      break;
+    case tokenB === VALUABLE_TOKENS.DAI:
+      nonValuableToken = tokenA;
+      break;
+    default:
+      const message = 
+        `Error VALUABLE_TOKENS does not have necessary valuable ` +
+        `token in identifyShitcoinAddress (module 1)`
+      logger.error(message);
+      sendTelegramNotification(message);
+      return null;
   }
 
-  return nonValuableToken;
+  return nonValuableToken.toLowerCase();
 }
 
-module.exports = getLiquidityValueInUSD;
+module.exports = identifyShitcoinAddress;

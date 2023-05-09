@@ -8,12 +8,13 @@ const provider = require('../connections/ethersProviderInstance');
 
 const FACTORY_CONTRACT_ADDRESS = '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f';
 
-const WETH_ADDRESS = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
+const WETH_ADDRESS = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
 
 const VALUABLE_TOKENS = [
   WETH_ADDRESS,
-  '0xdAC17F958D2ee523a2206206994597C13D831ec7', // USDT
-  '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // USDC
+  '0xdac17f958d2ee523a2206206994597c13d831ec7', // USDT
+  '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // USDC
+  '0x6b175474e89094c44da98b954eedeac495271d0f', // DAI
 ];
 
 function getExtraPairsToCheck(tokenAAddress, tokenBAddress) {
@@ -41,7 +42,8 @@ async function checkPairExists(tokenA, tokenB, previousBlockNumber, retries = 1)
 
     if (pairAddress === ethers.constants.AddressZero) {
       logger.details(
-        `Doesn't exist pairAddress ${pairAddress.slice(0, 8)} == 0x000000 in previous block`
+        `Doesn't exist pairAddress ${pairAddress.slice(0, 8)} == 0x000000 in previous block ` +
+        `tokenA ${tokenA} tokenB ${tokenB}`
       );
       return false;
     }
@@ -54,18 +56,22 @@ async function checkPairExists(tokenA, tokenB, previousBlockNumber, retries = 1)
 
       if (reserveA.gt(0) || reserveB.gt(0)) {
         logger.details(
-          `Pair with WETH exists in previous block pairAddress ${pairAddress}`
+          `Pair with WETH exists in previous block pairAddress ${pairAddress} ` +
+          `tokenA ${tokenA} tokenB ${tokenB}`
         );
         return true;
+      } else {
+        logger.details(
+          `Pair with WETH does not exists in previous block pairAddress ${pairAddress} ` +
+          `tokenA ${tokenA} tokenB ${tokenB}`
+        );
+        return false;
       }
-
-      logger.details(
-        `Doesn't exist pair with WETH in previous block, reserves == 0 pairAddress ${pairAddress}`
-      );
-      return false;
     }
 
-    logger.details(`Pair exists in previous block pairAddress ${pairAddress}`);
+    logger.details(
+      `Pair exists in previous block pairAddress ${pairAddress} tokenA ${tokenA} tokenB ${tokenB}`
+      );
     return true;
     
   } catch (error) {
@@ -75,14 +81,18 @@ async function checkPairExists(tokenA, tokenB, previousBlockNumber, retries = 1)
       return await checkPairExists(tokenA, tokenB, previousBlockNumber, retries - 1);
 
     } else {
-      logger.error(`Skip token. Error in checkPairExists: ${error.message}`);
-      sendTelegramNotification(`Error in checkPairExists: ${error.message}`);
-      return true;
+      const message = 
+      `Error cheking pair exists in checkPairExists (module 1). pair ${pairAddress} ` +
+      `tokenA ${tokenA} tokenB ${tokenB} Error message: ${error.message}`
+      logger.error(message);
+      sendTelegramNotification(message);
+
+      return false;
     }
   }
 }
 
-async function isThereLiquidityInPreviousBlock(tokenAAddress, tokenBAddress, currentBlockNumber) {
+async function checkIsItFirstAddLiquidity(tokenAAddress, tokenBAddress, currentBlockNumber) {
   const previousBlockNumber = currentBlockNumber - 1;
   const pairsToCheck = [
     [tokenAAddress, tokenBAddress],
@@ -101,4 +111,4 @@ async function isThereLiquidityInPreviousBlock(tokenAAddress, tokenBAddress, cur
   return true;
 }
 
-module.exports = isThereLiquidityInPreviousBlock;
+module.exports = checkIsItFirstAddLiquidity;
