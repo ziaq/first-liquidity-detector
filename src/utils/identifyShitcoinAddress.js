@@ -1,4 +1,3 @@
-const sendTelegramNotification = require('./sendTelegramNotification');
 const logger = require('./logger');
 
 function identifyShitcoinAddress(tokenA, tokenB) {
@@ -37,11 +36,9 @@ function identifyShitcoinAddress(tokenA, tokenB) {
       nonValuableToken = tokenA;
       break;
     default:
-      const message = 
-        `Error VALUABLE_TOKENS does not have necessary valuable ` +
-        `token in identifyShitcoinAddress (module 1)`
-      logger.error(message);
-      sendTelegramNotification(message);
+      logger.details(
+        `Tokens both are not valuable, tokenA ${tokenA} tokenB ${tokenB}`
+      );
       return null;
   }
 

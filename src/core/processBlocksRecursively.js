@@ -57,6 +57,14 @@ async function processBlocksRecursively(currentBlockNumber) {
 
     let nonValuableToken = identifyShitcoinAddress(tokenA, tokenB);
 
+    // If someone create pool with two shitcoins then it is not first liquidity add
+    if (!nonValuableToken) {
+      logger.info(
+        `Not first liquidity addition tokenA ${tokenA} tokenB ${tokenB}`
+      );
+      continue;
+    }
+
     if (isItFirstAddLiquidity) {
       const isSetBefore = await redisClientDb0.exists(nonValuableToken);
 
