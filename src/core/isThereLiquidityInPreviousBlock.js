@@ -40,7 +40,7 @@ async function checkPairExists(tokenA, tokenB, previousBlockNumber, retries = 1)
     const pairAddress = await factoryContract.getPair(tokenA, tokenB, { blockTag: previousBlockNumber });
 
     if (pairAddress === ethers.constants.AddressZero) {
-      logger.fetch(
+      logger.details(
         `Doesn't exist pairAddress ${pairAddress.slice(0, 8)} == 0x000000 in previous block`
       );
       return false;
@@ -53,19 +53,19 @@ async function checkPairExists(tokenA, tokenB, previousBlockNumber, retries = 1)
       const reserveB = reserves._reserve1;
 
       if (reserveA.gt(0) || reserveB.gt(0)) {
-        logger.fetch(
+        logger.details(
           `Pair with WETH exists in previous block pairAddress ${pairAddress}`
         );
         return true;
       }
 
-      logger.fetch(
+      logger.details(
         `Doesn't exist pair with WETH in previous block, reserves == 0 pairAddress ${pairAddress}`
       );
       return false;
     }
 
-    logger.fetch(`Pair exists in previous block pairAddress ${pairAddress}`);
+    logger.details(`Pair exists in previous block pairAddress ${pairAddress}`);
     return true;
     
   } catch (error) {
@@ -89,7 +89,7 @@ async function isThereLiquidityInPreviousBlock(tokenAAddress, tokenBAddress, cur
     ...getExtraPairsToCheck(tokenAAddress, tokenBAddress),
   ];
 
-  logger.fetch(`Checking pairs exist in previous block ${JSON.stringify(pairsToCheck)}`);
+  logger.details(`Checking pairs exist in previous block ${JSON.stringify(pairsToCheck)}`);
   for (const [tokenA, tokenB] of pairsToCheck) {
     const poolExists = await checkPairExists(tokenA, tokenB, previousBlockNumber);
 

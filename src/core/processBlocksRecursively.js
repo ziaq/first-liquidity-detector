@@ -7,6 +7,7 @@ const isThereLiquidityInPreviousBlock = require('./isThereLiquidityInPreviousBlo
 const identifyShitcoinAddress = require('../utils/identifyShitcoinAddress');
 const redisClientDb0 = require('../connections/redisInstance');
 const provider = require('../connections/ethersProviderInstance');
+const wait = require('../utils/wait');
 
 async function processBlocksRecursively(currentBlockNumber) {
   let block;
@@ -16,16 +17,19 @@ async function processBlocksRecursively(currentBlockNumber) {
 
   } catch (error) {
     const message = 
-      `Error getting block in processBlocksRecursively ${currentBlockNumber}: ${error.message}`;
+      `Error getting block in processBlocksRecursively ${currentBlockNumber} ` +
+      `retry in 3 seconds. Error message: ${error.message}`;
     logger.error(message);
     sendTelegramNotification(message);
-    processBlocksRecursively(currentBlockNumber + 1);
+
+    await wait(3000);
+    processBlocksRecursively(currentBlockNumber)
+    return;
   }
 
   if (!block) {
-    setTimeout(() => {
-      processBlocksRecursively(currentBlockNumber);
-    }, 3000);
+    await wait(3000);
+    processBlocksRecursively(currentBlockNumber)
     return;
   }
   logger.info(`Checking block ${currentBlockNumber}`);
@@ -39,18 +43,31 @@ async function processBlocksRecursively(currentBlockNumber) {
     if (!addLiquiditySignature) continue;
 
     const { tokenA, tokenB } = getTokensFromTransaction(transaction, addLiquiditySignature);
+    if (!tokenA || !tokenB) continue;
 
     // Condition for ignoring some tokens that have unusual pools and give weird result
     if (ignoreList.tokens.includes(tokenA) || ignoreList.tokens.includes(tokenB)) {
       continue;
     }
 
+    logger.details(`Сaught liquidity addition tx tokenA ${tokenA} tokenB ${tokenB}`)
+
     const isItFirstAddLiquidity = await isThereLiquidityInPreviousBlock(
       tokenA, tokenB, currentBlockNumber);
 
-    const nonValuableToken = identifyShitcoinAddress(tokenA, tokenB);;
+    let nonValuableToken = identifyShitcoinAddress(tokenA, tokenB);
+    nonValuableToken = nonValuableToken.toLowerCase();
+
+    const isSetBefore = await redisClientDb0.exists(nonValuableToken);
+    if (isSetBefore) {
+      logger.info(
+        `nonValuableToken ${nonValuableToken} exists in db0, avoid readdition to db0`
+      );
+      continue;
+    }
+
     if (isItFirstAddLiquidity) {
-      redisClientDb0.set(nonValuableToken, 'readyForNextInspection', 'EX', 1800);
+      redisClientDb0.set(nonValuableToken, transaction.from.toLowerCase(), 'EX', 129600);
 
       logger.bingo(`First liquidity addition in token ${nonValuableToken}`);
     } else {
